@@ -9,4 +9,8 @@ contextBridge.exposeInMainWorld('notefun', {
   onPromptBaseUrl: (cb: (current: string) => void) => {
     ipcRenderer.on('prompt-base-url', (_event, url: string) => cb(url));
   },
+  onOpenUrl: (cb: (url: string) => void) => {
+    ipcRenderer.on('open-url', (_event, url: string) => cb(url));
+  },
+  shellReady: () => ipcRenderer.send('shell-ready'),
 });

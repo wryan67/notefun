@@ -8,6 +8,8 @@ body {
   padding: 0;
   height: 100%;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
   font-family: 'Cantarell', 'Segoe UI', sans-serif;
   background: #f7f7f7;
   color: #202020;
@@ -16,6 +18,7 @@ body {
 
 .titlebar {
   height: 40px;
+  flex: 0 0 40px;
   display: flex;
   align-items: center;
   -webkit-app-region: drag;
@@ -41,6 +44,24 @@ body {
   height: 32px;
   font-size: 16px;
   border-radius: 6px;
+}
+
+.icon-btn .fa-house {
+  display: flex;
+  width: 16px;
+  height: 16px;
+}
+
+.icon-btn .fa-house svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+webview {
+  flex: 1 1 auto;
+  width: 100%;
+  border: 0;
 }
 
 .icon-btn:hover,
@@ -75,6 +96,7 @@ body {
 .prompt {
   position: absolute;
   inset: 40px 0 0 0;
+  z-index: 5;
   background: #fafafa;
   display: flex;
   align-items: flex-start;

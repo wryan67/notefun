@@ -1,7 +1,6 @@
 import {
   app,
   BrowserWindow,
-  BrowserView,
   ipcMain,
 } from 'electron';
 import path from 'node:path';
@@ -10,7 +9,6 @@ import started from 'electron-squirrel-startup';
 
 const DEFAULT_BASE_URL = 'https://onenote.cloud.microsoft/notebooks';
 const WINDOW_TITLE = 'Note Fun';
-const TITLE_BAR_HEIGHT = 40;
 
 if (started) {
   app.quit();
@@ -31,7 +29,6 @@ type AppConfig = {
 };
 
 let mainWindow: BrowserWindow | null = null;
-let contentView: BrowserView | null = null;
 let config: AppConfig = { baseUrl: '', lastUrl: '' };
 let lastUrlTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -146,48 +143,11 @@ const keepLinksInSameWindow = (contents: Electron.WebContents) => {
   });
 };
 
-const layoutViews = () => {
-  if (!mainWindow || !contentView) {
-    return;
-  }
-  const { width, height } = mainWindow.getContentBounds();
-  contentView.setBounds({
-    x: 0,
-    y: TITLE_BAR_HEIGHT,
-    width,
-    height: Math.max(0, height - TITLE_BAR_HEIGHT),
-  });
-};
-
-const showContentView = () => {
-  if (!mainWindow || !contentView) {
-    return;
-  }
-  if (!mainWindow.getBrowserViews().includes(contentView)) {
-    mainWindow.addBrowserView(contentView);
-  }
-  layoutViews();
-};
-
-const hideContentView = () => {
-  if (!mainWindow || !contentView) {
-    return;
-  }
-  if (mainWindow.getBrowserViews().includes(contentView)) {
-    mainWindow.removeBrowserView(contentView);
-  }
-};
-
 const loadContent = (url: string) => {
-  if (!contentView) {
-    return;
-  }
-  showContentView();
-  void contentView.webContents.loadURL(url);
+  mainWindow?.webContents.send('open-url', url);
 };
 
 const showBaseUrlPrompt = () => {
-  hideContentView();
   mainWindow?.webContents.send(
     'prompt-base-url',
     config.baseUrl || DEFAULT_BASE_URL,
@@ -220,18 +180,9 @@ const createWindow = () => {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      webviewTag: true,
     },
   });
-
-  contentView = new BrowserView({
-    webPreferences: {
-      contextIsolation: true,
-      nodeIntegration: false,
-    },
-  });
-  mainWindow.addBrowserView(contentView);
-  attachContentHandlers(contentView.webContents);
-  layoutViews();
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     void mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
@@ -246,11 +197,9 @@ const createWindow = () => {
     mainWindow?.setTitle(WINDOW_TITLE);
   });
 
-  mainWindow.on('resize', layoutViews);
   mainWindow.on('closed', () => {
     flushLastUrl();
     mainWindow = null;
-    contentView = null;
   });
 
   mainWindow.webContents.on('before-input-event', (event, input) => {
@@ -260,25 +209,19 @@ const createWindow = () => {
     }
   });
 
-  contentView.webContents.on('before-input-event', (event, input) => {
-    if (input.type === 'keyDown' && input.control && input.shift && input.key.toLowerCase() === 'h') {
-      event.preventDefault();
-      showBaseUrlPrompt();
-    }
-  });
-
-  mainWindow.webContents.on('did-finish-load', () => {
-    if (!config.baseUrl) {
-      showBaseUrlPrompt();
-      return;
-    }
-    const start =
-      config.lastUrl && isRestorableUrl(config.lastUrl)
-        ? config.lastUrl
-        : config.baseUrl;
-    loadContent(start);
-  });
 };
+
+ipcMain.on('shell-ready', () => {
+  if (!config.baseUrl) {
+    showBaseUrlPrompt();
+    return;
+  }
+  const start =
+    config.lastUrl && isRestorableUrl(config.lastUrl)
+      ? config.lastUrl
+      : config.baseUrl;
+  loadContent(start);
+});
 
 ipcMain.on('home', () => {
   if (config.baseUrl) {
@@ -319,6 +262,15 @@ ipcMain.on('set-base-url', (_event, raw: string) => {
 
 app.on('web-contents-created', (_event, contents) => {
   keepLinksInSameWindow(contents);
+  if (contents.getType() === 'webview') {
+    attachContentHandlers(contents);
+    contents.on('before-input-event', (event, input) => {
+      if (input.type === 'keyDown' && input.control && input.shift && input.key.toLowerCase() === 'h') {
+        event.preventDefault();
+        showBaseUrlPrompt();
+      }
+    });
+  }
 });
 
 app.on('second-instance', () => {
