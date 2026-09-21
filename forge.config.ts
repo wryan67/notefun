@@ -12,7 +12,7 @@ const config: ForgeConfig = {
     asar: true,
     icon: 'assets/icon',
     executableName: 'notefun',
-    extraResource: ['assets/icon.png'],
+    extraResource: ['assets/icon.png', 'prompt.html'],
   },
   rebuildConfig: {},
   makers: [

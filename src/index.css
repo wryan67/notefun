@@ -8,8 +8,6 @@ body {
   padding: 0;
   height: 100%;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
   font-family: 'Cantarell', 'Segoe UI', sans-serif;
   background: #f7f7f7;
   color: #202020;
@@ -18,7 +16,6 @@ body {
 
 .titlebar {
   height: 40px;
-  flex: 0 0 40px;
   display: flex;
   align-items: center;
   -webkit-app-region: drag;
@@ -58,12 +55,6 @@ body {
   display: block;
 }
 
-webview {
-  flex: 1 1 auto;
-  width: 100%;
-  border: 0;
-}
-
 .icon-btn:hover,
 .win-btn:hover {
   background: #e4e4e4;
@@ -91,52 +82,4 @@ webview {
 .win-btn.close:hover {
   background: #e81123;
   color: #fff;
-}
-
-.prompt {
-  position: absolute;
-  inset: 40px 0 0 0;
-  z-index: 5;
-  background: #fafafa;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 48px;
-}
-
-.prompt.hidden {
-  display: none;
-}
-
-.prompt form {
-  width: min(640px, 90%);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.prompt label {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.prompt input {
-  font-size: 14px;
-  padding: 8px 10px;
-  border: 1px solid #c4c4c4;
-  border-radius: 4px;
-}
-
-.prompt-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.prompt button[type='submit'] {
-  background: #7719aa;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  padding: 8px 16px;
-  cursor: pointer;
 }

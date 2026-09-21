@@ -20,20 +20,6 @@
         <button type="button" id="close" class="win-btn close" aria-label="Close">&#x2715;</button>
       </div>
     </header>
-    <div id="prompt" class="prompt hidden" role="dialog" aria-labelledby="prompt-label">
-      <form id="prompt-form">
-        <label id="prompt-label" for="base-url">Base URL</label>
-        <input id="base-url" type="text" spellcheck="false" />
-        <div class="prompt-actions">
-          <button type="submit">Go</button>
-        </div>
-      </form>
-    </div>
-    <webview
-      id="guest"
-      partition="persist:notefun"
-      allowpopups
-    ></webview>
     <script type="module" src="/src/renderer.ts"></script>
   </body>
 </html>

@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Base URL</title>
+    <style>
+      html, body { margin: 0; padding: 0; font-family: Cantarell, 'Segoe UI', sans-serif; background: #fafafa; color: #202020; }
+      form { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+      label { font-weight: 600; font-size: 14px; }
+      input { font-size: 14px; padding: 8px 10px; border: 1px solid #c4c4c4; border-radius: 4px; }
+      .actions { display: flex; justify-content: flex-end; }
+      button { background: #7719aa; color: #fff; border: none; border-radius: 4px; padding: 8px 16px; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <form id="prompt-form">
+      <label for="base-url">Base URL</label>
+      <input id="base-url" type="text" spellcheck="false" />
+      <div class="actions">
+        <button type="submit">Go</button>
+      </div>
+    </form>
+    <script>
+      const input = document.getElementById('base-url');
+      const params = new URLSearchParams(location.search);
+      input.value = params.get('url') || 'https://onenote.cloud.microsoft/notebooks';
+      input.focus();
+      input.select();
+      document.getElementById('prompt-form').addEventListener('submit', (event) => {
+        event.preventDefault();
+        const url = input.value.trim();
+        if (!url) return;
+        window.notefun.submitBaseUrl(url);
+      });
+    </script>
+  </body>
+</html>

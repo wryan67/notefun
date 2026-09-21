@@ -6,11 +6,4 @@ contextBridge.exposeInMainWorld('notefun', {
   maximize: () => ipcRenderer.send('window-maximize'),
   close: () => ipcRenderer.send('window-close'),
   submitBaseUrl: (url: string) => ipcRenderer.send('set-base-url', url),
-  onPromptBaseUrl: (cb: (current: string) => void) => {
-    ipcRenderer.on('prompt-base-url', (_event, url: string) => cb(url));
-  },
-  onOpenUrl: (cb: (url: string) => void) => {
-    ipcRenderer.on('open-url', (_event, url: string) => cb(url));
-  },
-  shellReady: () => ipcRenderer.send('shell-ready'),
 });

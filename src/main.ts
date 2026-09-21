@@ -1,6 +1,7 @@
 import {
   app,
   BrowserWindow,
+  WebContentsView,
   ipcMain,
 } from 'electron';
 import path from 'node:path';
@@ -9,6 +10,7 @@ import started from 'electron-squirrel-startup';
 
 const DEFAULT_BASE_URL = 'https://onenote.cloud.microsoft/notebooks';
 const WINDOW_TITLE = 'Note Fun';
+const TITLE_BAR_HEIGHT = 40;
 
 if (started) {
   app.quit();
@@ -29,6 +31,8 @@ type AppConfig = {
 };
 
 let mainWindow: BrowserWindow | null = null;
+let contentView: WebContentsView | null = null;
+let promptWindow: BrowserWindow | null = null;
 let config: AppConfig = { baseUrl: '', lastUrl: '' };
 let lastUrlTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -36,6 +40,11 @@ const iconPath = () =>
   app.isPackaged
     ? path.join(process.resourcesPath, 'icon.png')
     : path.join(__dirname, '../../assets/icon.png');
+
+const promptPath = () =>
+  app.isPackaged
+    ? path.join(process.resourcesPath, 'prompt.html')
+    : path.join(__dirname, '../../prompt.html');
 
 const configFilePath = () => path.join(app.getPath('userData'), 'config.json');
 
@@ -54,6 +63,17 @@ const loadConfig = (): AppConfig => {
 const saveConfig = () => {
   fs.mkdirSync(app.getPath('userData'), { recursive: true });
   fs.writeFileSync(configFilePath(), JSON.stringify(config, null, 2));
+};
+
+const normalizeUrl = (raw: string): string => {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return trimmed;
+  }
+  if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed)) {
+    return `https://${trimmed}`;
+  }
+  return trimmed;
 };
 
 const isLoginHost = (host: string): boolean => {
@@ -143,15 +163,17 @@ const keepLinksInSameWindow = (contents: Electron.WebContents) => {
   });
 };
 
-const loadContent = (url: string) => {
-  mainWindow?.webContents.send('open-url', url);
-};
-
-const showBaseUrlPrompt = () => {
-  mainWindow?.webContents.send(
-    'prompt-base-url',
-    config.baseUrl || DEFAULT_BASE_URL,
-  );
+const layoutContentView = () => {
+  if (!mainWindow || !contentView) {
+    return;
+  }
+  const [width, height] = mainWindow.getContentSize();
+  contentView.setBounds({
+    x: 0,
+    y: TITLE_BAR_HEIGHT,
+    width,
+    height: Math.max(0, height - TITLE_BAR_HEIGHT),
+  });
 };
 
 const attachContentHandlers = (contents: Electron.WebContents) => {
@@ -164,6 +186,82 @@ const attachContentHandlers = (contents: Electron.WebContents) => {
   contents.on('page-title-updated', () => {
     persistLastUrl(contents.getURL(), contents.getTitle());
   });
+  contents.on('before-input-event', (event, input) => {
+    if (input.type === 'keyDown' && input.control && input.shift && input.key.toLowerCase() === 'h') {
+      event.preventDefault();
+      showBaseUrlPrompt();
+    }
+  });
+};
+
+const ensureContentView = () => {
+  if (!mainWindow) {
+    return;
+  }
+  if (contentView) {
+    layoutContentView();
+    return;
+  }
+  contentView = new WebContentsView({
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+  contentView.webContents.setUserAgent(app.userAgentFallback);
+  attachContentHandlers(contentView.webContents);
+  mainWindow.contentView.addChildView(contentView);
+  layoutContentView();
+};
+
+const loadContent = (url: string) => {
+  ensureContentView();
+  if (!contentView) {
+    return;
+  }
+  void contentView.webContents.loadURL(url);
+};
+
+const showBaseUrlPrompt = () => {
+  if (promptWindow && !promptWindow.isDestroyed()) {
+    promptWindow.focus();
+    return;
+  }
+  if (!mainWindow) {
+    return;
+  }
+  promptWindow = new BrowserWindow({
+    parent: mainWindow,
+    modal: true,
+    width: 640,
+    height: 180,
+    resizable: true,
+    title: 'Base URL',
+    icon: iconPath(),
+    autoHideMenuBar: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+  const current = config.baseUrl || DEFAULT_BASE_URL;
+  void promptWindow.loadFile(promptPath(), { query: { url: current } });
+  promptWindow.on('closed', () => {
+    promptWindow = null;
+  });
+};
+
+const startSession = () => {
+  if (!config.baseUrl) {
+    showBaseUrlPrompt();
+    return;
+  }
+  const start =
+    config.lastUrl && isRestorableUrl(config.lastUrl)
+      ? config.lastUrl
+      : config.baseUrl;
+  loadContent(start);
 };
 
 const createWindow = () => {
@@ -176,11 +274,11 @@ const createWindow = () => {
     icon: iconPath(),
     frame: false,
     autoHideMenuBar: true,
+    backgroundColor: '#f7f7f7',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      webviewTag: true,
     },
   });
 
@@ -197,9 +295,11 @@ const createWindow = () => {
     mainWindow?.setTitle(WINDOW_TITLE);
   });
 
+  mainWindow.on('resize', layoutContentView);
   mainWindow.on('closed', () => {
     flushLastUrl();
     mainWindow = null;
+    contentView = null;
   });
 
   mainWindow.webContents.on('before-input-event', (event, input) => {
@@ -209,19 +309,10 @@ const createWindow = () => {
     }
   });
 
+  mainWindow.webContents.on('did-finish-load', () => {
+    startSession();
+  });
 };
-
-ipcMain.on('shell-ready', () => {
-  if (!config.baseUrl) {
-    showBaseUrlPrompt();
-    return;
-  }
-  const start =
-    config.lastUrl && isRestorableUrl(config.lastUrl)
-      ? config.lastUrl
-      : config.baseUrl;
-  loadContent(start);
-});
 
 ipcMain.on('home', () => {
   if (config.baseUrl) {
@@ -251,26 +342,20 @@ ipcMain.on('window-close', () => {
 });
 
 ipcMain.on('set-base-url', (_event, raw: string) => {
-  const url = (raw || '').trim();
+  const url = normalizeUrl(raw);
   if (!url) {
     return;
   }
   config.baseUrl = url;
   saveConfig();
+  if (promptWindow && !promptWindow.isDestroyed()) {
+    promptWindow.close();
+  }
   loadContent(url);
 });
 
 app.on('web-contents-created', (_event, contents) => {
   keepLinksInSameWindow(contents);
-  if (contents.getType() === 'webview') {
-    attachContentHandlers(contents);
-    contents.on('before-input-event', (event, input) => {
-      if (input.type === 'keyDown' && input.control && input.shift && input.key.toLowerCase() === 'h') {
-        event.preventDefault();
-        showBaseUrlPrompt();
-      }
-    });
-  }
 });
 
 app.on('second-instance', () => {
