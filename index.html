@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Note Fun</title>
+  </head>
+  <body>
+    <header class="titlebar">
+      <button type="button" id="home" class="icon-btn" title="Home" aria-label="Home">
+        <i class="fa-regular fa-house"></i>
+      </button>
+      <div class="title">Note Fun</div>
+      <div class="win-controls">
+        <button type="button" id="min" class="win-btn" aria-label="Minimize">&#x2212;</button>
+        <button type="button" id="max" class="win-btn" aria-label="Maximize">&#x25A1;</button>
+        <button type="button" id="close" class="win-btn close" aria-label="Close">&#x2715;</button>
+      </div>
+    </header>
+    <div id="prompt" class="prompt hidden" role="dialog" aria-labelledby="prompt-label">
+      <form id="prompt-form">
+        <label id="prompt-label" for="base-url">Base URL</label>
+        <input id="base-url" type="url" spellcheck="false" />
+        <div class="prompt-actions">
+          <button type="submit">Go</button>
+        </div>
+      </form>
+    </div>
+    <script type="module" src="/src/renderer.ts"></script>
+  </body>
+</html>

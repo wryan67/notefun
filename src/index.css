@@ -1,0 +1,120 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Cantarell', 'Segoe UI', sans-serif;
+  background: #f7f7f7;
+  color: #202020;
+  user-select: none;
+}
+
+.titlebar {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  -webkit-app-region: drag;
+  background: #f7f7f7;
+  border-bottom: 1px solid #d0d0d0;
+  padding: 0 4px 0 8px;
+}
+
+.icon-btn,
+.win-btn {
+  -webkit-app-region: no-drag;
+  background: transparent;
+  border: none;
+  color: #2e2e2e;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  font-size: 16px;
+  border-radius: 6px;
+}
+
+.icon-btn:hover,
+.win-btn:hover {
+  background: #e4e4e4;
+}
+
+.title {
+  flex: 1;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.win-controls {
+  display: flex;
+  -webkit-app-region: no-drag;
+}
+
+.win-btn {
+  width: 40px;
+  height: 40px;
+  font-size: 14px;
+}
+
+.win-btn.close:hover {
+  background: #e81123;
+  color: #fff;
+}
+
+.prompt {
+  position: absolute;
+  inset: 40px 0 0 0;
+  background: #fafafa;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 48px;
+}
+
+.prompt.hidden {
+  display: none;
+}
+
+.prompt form {
+  width: min(640px, 90%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prompt label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.prompt input {
+  font-size: 14px;
+  padding: 8px 10px;
+  border: 1px solid #c4c4c4;
+  border-radius: 4px;
+}
+
+.prompt-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.prompt button[type='submit'] {
+  background: #7719aa;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+}
